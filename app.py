@@ -429,6 +429,8 @@ if current_messages and current_messages[-1]["role"] == "user":
         if results:
             # Sources Layout
             sources_html_accum = "" 
+            videos_html = ""
+            web_html = ""
             
             # Split results into Videos (YouTube) and Web
             video_results = [r for r in results if 'youtube.com' in r['url']]
@@ -449,7 +451,7 @@ if current_messages and current_messages[-1]["role"] == "user":
                             </div>
                         </a>
                         """, unsafe_allow_html=True)
-                        sources_html_accum += f"""<a href="{res['url']}" target="_blank" style="text-decoration:none; color:inherit;"><div style="background: #f9fafb; padding: 10px; border-radius: 8px; border: 1px solid #e5e7eb; width: 220px; display:inline-block; margin-right:10px; vertical-align:top;"><div style="font-weight:600; font-size:0.9rem; margin-bottom:5px; height:2.6em; overflow:hidden;">{res['title']}</div><div style="font-size:0.75rem; color:#6b7280;">{res['url'].split('/')[2]}</div></div></a>"""
+                        videos_html += f"""<a href="{res['url']}" target="_blank" style="text-decoration:none; color:inherit;"><div style="background: #f9fafb; padding: 10px; border-radius: 8px; border: 1px solid #e5e7eb; width: 220px; display:inline-block; margin-right:10px; vertical-align:top;"><div style="font-weight:600; font-size:0.9rem; margin-bottom:5px; height:2.6em; overflow:hidden;">{res['title']}</div><div style="font-size:0.75rem; color:#6b7280;">{res['url'].split('/')[2]}</div></div></a>"""
 
             # --- Web Results Section ---
             if web_results:
@@ -467,7 +469,7 @@ if current_messages and current_messages[-1]["role"] == "user":
                         </a>
                         """, unsafe_allow_html=True)
                         
-                        sources_html_accum += f"""<a href="{res['url']}" target="_blank" style="text-decoration:none; color:inherit;"><div style="background: #f9fafb; padding: 10px; border-radius: 8px; border: 1px solid #e5e7eb; width: 220px; display:inline-block; margin-right:10px; vertical-align:top;"><div style="font-weight:600; font-size:0.9rem; margin-bottom:5px; height:2.6em; overflow:hidden;">{res['title']}</div><div style="font-size:0.75rem; color:#6b7280;">{res['url'].split('/')[2]}</div></div></a>"""
+                        web_html += f"""<a href="{res['url']}" target="_blank" style="text-decoration:none; color:inherit;"><div style="background: #f9fafb; padding: 10px; border-radius: 8px; border: 1px solid #e5e7eb; width: 220px; display:inline-block; margin-right:10px; vertical-align:top;"><div style="font-weight:600; font-size:0.9rem; margin-bottom:5px; height:2.6em; overflow:hidden;">{res['title']}</div><div style="font-size:0.75rem; color:#6b7280;">{res['url'].split('/')[2]}</div></div></a>"""
 
             # Generate Answer
             st.markdown('<div class="section-header" style="margin-top: 1.5rem;"><span style="font-size: 1.2rem; margin-right: 5px;">✨</span> Answer</div>', unsafe_allow_html=True)
@@ -481,7 +483,13 @@ if current_messages and current_messages[-1]["role"] == "user":
                 full_response_text += chunk.text
                 answer_placeholder.markdown(full_response_text)
             
-            final_history_html = f"""<div style="margin-top: 1rem;"><div style="font-size: 0.9rem; font-weight: 600; color: #5f6368; margin-bottom: 0.5rem; display:flex; align-items:center;">SOURCES</div><div style="overflow-x: auto; white-space: nowrap; padding-bottom: 10px;">{sources_html_accum}</div></div><div style="margin-top: 1rem; font-size: 1.05rem; line-height: 1.7; color: #1f1f1f;"><span style="font-size: 1.2rem; margin-right: 5px;">✨</span> <strong>Answer</strong><br>{full_response_text}</div>"""
+            final_sources_html = ""
+            if videos_html:
+                final_sources_html += f"""<div style="margin-top: 1rem;"><div style="font-size: 0.9rem; font-weight: 600; color: #5f6368; margin-bottom: 0.5rem; display:flex; align-items:center;">📺 VIDEOS</div><div style="overflow-x: auto; white-space: nowrap; padding-bottom: 10px;">{videos_html}</div></div>"""
+            if web_html:
+                final_sources_html += f"""<div style="margin-top: 1rem;"><div style="font-size: 0.9rem; font-weight: 600; color: #5f6368; margin-bottom: 0.5rem; display:flex; align-items:center;">🔗 SOURCES</div><div style="overflow-x: auto; white-space: nowrap; padding-bottom: 10px;">{web_html}</div></div>"""
+            
+            final_history_html = f"""{final_sources_html}<div style="margin-top: 1rem; font-size: 1.05rem; line-height: 1.7; color: #1f1f1f;"><span style="font-size: 1.2rem; margin-right: 5px;">✨</span> <strong>Answer</strong><br>{full_response_text}</div>"""
             
             current_messages.append({
                 "role": "assistant", 
@@ -515,7 +523,13 @@ if current_messages and current_messages[-1]["role"] == "user":
                         full_response_text += chunk.text
                         answer_placeholder.markdown(full_response_text)
                     
-                    final_history_html = f"""<div style="margin-top: 1rem;"><div style="font-size: 0.9rem; font-weight: 600; color: #5f6368; margin-bottom: 0.5rem; display:flex; align-items:center;">SOURCES</div><div style="overflow-x: auto; white-space: nowrap; padding-bottom: 10px;">{sources_html_accum}</div></div><div style="margin-top: 1rem; font-size: 1.05rem; line-height: 1.7; color: #1f1f1f;"><span style="font-size: 1.2rem; margin-right: 5px;">✨</span> <strong>Answer</strong><br>{full_response_text}</div>"""
+                    final_sources_html = ""
+                    if videos_html:
+                        final_sources_html += f"""<div style="margin-top: 1rem;"><div style="font-size: 0.9rem; font-weight: 600; color: #5f6368; margin-bottom: 0.5rem; display:flex; align-items:center;">📺 VIDEOS</div><div style="overflow-x: auto; white-space: nowrap; padding-bottom: 10px;">{videos_html}</div></div>"""
+                    if web_html:
+                        final_sources_html += f"""<div style="margin-top: 1rem;"><div style="font-size: 0.9rem; font-weight: 600; color: #5f6368; margin-bottom: 0.5rem; display:flex; align-items:center;">🔗 SOURCES</div><div style="overflow-x: auto; white-space: nowrap; padding-bottom: 10px;">{web_html}</div></div>"""
+                    
+                    final_history_html = f"""{final_sources_html}<div style="margin-top: 1rem; font-size: 1.05rem; line-height: 1.7; color: #1f1f1f;"><span style="font-size: 1.2rem; margin-right: 5px;">✨</span> <strong>Answer</strong><br>{full_response_text}</div>"""
                     
                     current_messages.append({
                         "role": "assistant", 
