@@ -87,7 +87,7 @@ def generate_answer(query, search_results, history=[]):
     
     Instructions:
     1. Answer the question comprehensively using ONLY the provided context.
-    2. Cite your sources using [Source Name] format within the text.
+    2. Cite your sources using [Source Name](Source URL) format within the text. Ensure every citation is a clickable markdown link.
     3. If the answer isn't in the context, state that you couldn't find it.
     4. Maintain a helpful and professional tone.
     """
@@ -430,22 +430,44 @@ if current_messages and current_messages[-1]["role"] == "user":
             # Sources Layout
             sources_html_accum = "" 
             
-            st.markdown('<div class="section-header"><span>🔗</span> Sources</div>', unsafe_allow_html=True)
+            # Split results into Videos (YouTube) and Web
+            video_results = [r for r in results if 'youtube.com' in r['url']]
+            web_results = [r for r in results if 'youtube.com' not in r['url']]
             
-            cols = st.columns(len(results) if len(results) < 4 else 4)
-            for i, res in enumerate(results[:4]):
-                with cols[i]:
-                    st.markdown(f"""
-                    <a href="{res['url']}" target="_blank" class="source-card">
-                        <div class="source-title">{res['title']}</div>
-                        <div class="source-url">
-                            <img src="https://www.google.com/s2/favicons?domain={res['url']}" width="16" height="16" style="margin-right:5px; opacity:0.7;">
-                            {res['url'].split('/')[2].replace('www.','')}
-                        </div>
-                    </a>
-                    """, unsafe_allow_html=True)
-                    
-                    sources_html_accum += f"""<a href="{res['url']}" target="_blank" style="text-decoration:none; color:inherit;"><div style="background: #f9fafb; padding: 10px; border-radius: 8px; border: 1px solid #e5e7eb; width: 220px; display:inline-block; margin-right:10px; vertical-align:top;"><div style="font-weight:600; font-size:0.9rem; margin-bottom:5px; height:2.6em; overflow:hidden;">{res['title']}</div><div style="font-size:0.75rem; color:#6b7280;">{res['url'].split('/')[2]}</div></div></a>"""
+            # --- Videos Section ---
+            if video_results:
+                st.markdown('<div class="section-header"><span>📺</span> Videos</div>', unsafe_allow_html=True)
+                cols = st.columns(len(video_results) if len(video_results) < 4 else 4)
+                for i, res in enumerate(video_results[:4]):
+                    with cols[i]:
+                        st.markdown(f"""
+                        <a href="{res['url']}" target="_blank" class="source-card">
+                            <div class="source-title">{res['title']}</div>
+                            <div class="source-url">
+                                <img src="https://www.google.com/s2/favicons?domain={res['url']}" width="16" height="16" style="margin-right:5px; opacity:0.7;">
+                                {res['url'].split('/')[2].replace('www.','')}
+                            </div>
+                        </a>
+                        """, unsafe_allow_html=True)
+                        sources_html_accum += f"""<a href="{res['url']}" target="_blank" style="text-decoration:none; color:inherit;"><div style="background: #f9fafb; padding: 10px; border-radius: 8px; border: 1px solid #e5e7eb; width: 220px; display:inline-block; margin-right:10px; vertical-align:top;"><div style="font-weight:600; font-size:0.9rem; margin-bottom:5px; height:2.6em; overflow:hidden;">{res['title']}</div><div style="font-size:0.75rem; color:#6b7280;">{res['url'].split('/')[2]}</div></div></a>"""
+
+            # --- Web Results Section ---
+            if web_results:
+                st.markdown('<div class="section-header"><span>🔗</span> Sources</div>', unsafe_allow_html=True)
+                cols = st.columns(len(web_results) if len(web_results) < 4 else 4)
+                for i, res in enumerate(web_results[:4]):
+                    with cols[i]:
+                        st.markdown(f"""
+                        <a href="{res['url']}" target="_blank" class="source-card">
+                            <div class="source-title">{res['title']}</div>
+                            <div class="source-url">
+                                <img src="https://www.google.com/s2/favicons?domain={res['url']}" width="16" height="16" style="margin-right:5px; opacity:0.7;">
+                                {res['url'].split('/')[2].replace('www.','')}
+                            </div>
+                        </a>
+                        """, unsafe_allow_html=True)
+                        
+                        sources_html_accum += f"""<a href="{res['url']}" target="_blank" style="text-decoration:none; color:inherit;"><div style="background: #f9fafb; padding: 10px; border-radius: 8px; border: 1px solid #e5e7eb; width: 220px; display:inline-block; margin-right:10px; vertical-align:top;"><div style="font-weight:600; font-size:0.9rem; margin-bottom:5px; height:2.6em; overflow:hidden;">{res['title']}</div><div style="font-size:0.75rem; color:#6b7280;">{res['url'].split('/')[2]}</div></div></a>"""
 
             # Generate Answer
             st.markdown('<div class="section-header" style="margin-top: 1.5rem;"><span style="font-size: 1.2rem; margin-right: 5px;">✨</span> Answer</div>', unsafe_allow_html=True)
