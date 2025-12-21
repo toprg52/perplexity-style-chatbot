@@ -5,6 +5,7 @@ import uuid
 from dotenv import load_dotenv
 from tavily import TavilyClient
 import google.generativeai as genai
+import re
 
 # --- 1. SETUP, SECURITY, AND RATE LIMIT TRACKING ---
 
@@ -52,6 +53,18 @@ def search_web(query):
     except Exception as e:
         st.error(f"Search failed: {e}")
         return []
+
+def extract_youtube_id(url):
+    """
+    Extracts the video ID from a YouTube URL.
+    Supports: youtube.com/watch?v=ID, and youtu.be/ID
+    """
+    # Pattern to match various YouTube URL formats
+    pattern = r'(?:https?://)?(?:www\.)?(?:youtube\.com/watch\?v=|youtu\.be/)([\w-]+)'
+    match = re.search(pattern, url)
+    if match:
+        return match.group(1)
+    return None
 
 def generate_answer(query, search_results, history=[]):
     """
@@ -283,7 +296,68 @@ st.markdown("""
         border-bottom: 1px solid #f0f0f0;
         margin-bottom: 1rem;
     }
+
+    /* Video Carousel Styling */
+    .video-carousel {
+        display: flex;
+        overflow-x: auto;
+        gap: 1rem;
+        padding-bottom: 1rem;
+        margin-bottom: 1rem;
+        scrollbar-width: thin; /* Firefox */
+    }
     
+    .video-carousel::-webkit-scrollbar {
+        height: 8px;
+    }
+    
+    .video-carousel::-webkit-scrollbar-thumb {
+        background: #dfe1e5;
+        border-radius: 4px;
+    }
+    
+    .video-card {
+        flex: 0 0 240px; /* Fixed width */
+        text-decoration: none;
+        background: #f0f4f9;
+        border-radius: 12px;
+        overflow: hidden;
+        color: inherit;
+        transition: transform 0.2s;
+    }
+    
+    .video-card:hover {
+        transform: translateY(-3px);
+    }
+    
+    .video-thumbnail {
+        width: 100%;
+        height: 135px;
+        object-fit: cover;
+        display: block;
+    }
+    
+    .video-info {
+        padding: 0.8rem;
+    }
+    
+    .video-title {
+        font-size: 0.85rem;
+        font-weight: 600;
+        line-height: 1.3;
+        color: #1f1f1f;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        margin-bottom: 0.3rem;
+    }
+    
+    .video-source {
+        font-size: 0.75rem;
+        color: #6b7280;
+    }
+
 </style>
 """, unsafe_allow_html=True)
 
@@ -436,22 +510,33 @@ if current_messages and current_messages[-1]["role"] == "user":
             video_results = [r for r in results if 'youtube.com' in r['url']]
             web_results = [r for r in results if 'youtube.com' not in r['url']]
             
-            # --- Videos Section ---
+            # --- Videos Section (Carousel) ---
             if video_results:
                 st.markdown('<div class="section-header"><span>📺</span> Videos</div>', unsafe_allow_html=True)
-                cols = st.columns(len(video_results) if len(video_results) < 4 else 4)
-                for i, res in enumerate(video_results[:4]):
-                    with cols[i]:
-                        st.markdown(f"""
-                        <a href="{res['url']}" target="_blank" class="source-card">
-                            <div class="source-title">{res['title']}</div>
-                            <div class="source-url">
-                                <img src="https://www.google.com/s2/favicons?domain={res['url']}" width="16" height="16" style="margin-right:5px; opacity:0.7;">
-                                {res['url'].split('/')[2].replace('www.','')}
+                
+                # Generate HTML for the horizontal scrolling carousel
+                carousel_html = '<div class="video-carousel">'
+                
+                for res in video_results[:6]: # Show up to 6 videos in carousel
+                    video_id = extract_youtube_id(res['url'])
+                    if video_id:
+                        thumbnail_url = f"https://img.youtube.com/vi/{video_id}/mqdefault.jpg"
+                        
+                        carousel_html += f"""
+                        <a href="{res['url']}" target="_blank" class="video-card">
+                            <img src="{thumbnail_url}" class="video-thumbnail">
+                            <div class="video-info">
+                                <div class="video-title">{res['title']}</div>
+                                <div class="video-source">YouTube</div>
                             </div>
                         </a>
-                        """, unsafe_allow_html=True)
-                        videos_html += f"""<a href="{res['url']}" target="_blank" style="text-decoration:none; color:inherit;"><div style="background: #f9fafb; padding: 10px; border-radius: 8px; border: 1px solid #e5e7eb; width: 220px; display:inline-block; margin-right:10px; vertical-align:top;"><div style="font-weight:600; font-size:0.9rem; margin-bottom:5px; height:2.6em; overflow:hidden;">{res['title']}</div><div style="font-size:0.75rem; color:#6b7280;">{res['url'].split('/')[2]}</div></div></a>"""
+                        """
+                        # Add to persistence string (simplified for history)
+                        videos_html += f"""<a href="{res['url']}" target="_blank" style="text-decoration:none; color:inherit; margin-right: 15px;"><div style="display:inline-block; width: 220px; vertical-align: top;"><img src="{thumbnail_url}" style="width:100%; border-radius:8px; margin-bottom:5px;"><div style="font-weight:600; font-size:0.9rem; line-height:1.3;">{res['title']}</div></div></a>"""
+                
+                carousel_html += '</div>'
+                st.markdown(carousel_html, unsafe_allow_html=True)
+
 
             # --- Web Results Section ---
             if web_results:
