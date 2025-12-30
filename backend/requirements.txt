@@ -3,4 +3,5 @@ uvicorn
 motor
 tavily-python
 google-generativeai
+openai
 python-dotenv

@@ -120,17 +120,41 @@ async def chat_endpoint(request: ChatRequest):
         sources_data = json.dumps({"type": "sources", "data": search_results}) + "\n--split--\n"
         yield sources_data
         
-        # Stream Gemini content
-        async for chunk in generate_response_stream(user_query, search_results, session['messages']):
-            full_text += chunk
-            yield chunk
+        try:
+            # Stream Gemini content
+            async for chunk in generate_response_stream(user_query, search_results, session['messages']):
+                full_text += chunk
+                yield chunk
 
-        # Save Assistant Message to DB
-        assistant_msg = {
-            "role": "assistant",
-            "content": full_text,
-            "sources": search_results
-        }
-        await add_message(session_id, assistant_msg)
+            # Save Assistant Message to DB
+            assistant_msg = {
+                "role": "assistant",
+                "content": full_text,
+                "sources": search_results
+            }
+            await add_message(session_id, assistant_msg)
+        except Exception as e:
+            print(f"Streaming Error: {e}")
+            yield f"\n\n[System Error: An unexpected error occurred during generation.]"
 
     return StreamingResponse(response_generator(), media_type="text/plain")
+
+if __name__ == "__main__":
+    print("DEBUG: Entered __main__")
+    import uvicorn
+    import logging
+    print("DEBUG: Imports done")
+
+    # Configure file logging
+    logging.basicConfig(filename='server_lifecycle.log', level=logging.DEBUG)
+    print("DEBUG: Logging configured")
+    logging.info("Starting Server on Port 8005...")
+    
+    try:
+        print("DEBUG: Starting Uvicorn run...")
+        uvicorn.run(app, host="0.0.0.0", port=8005)
+        print("DEBUG: Uvicorn run finished (clean exit)")
+    except Exception as e:
+        print(f"DEBUG: Server crashed with exception: {e}")
+        logging.critical(f"Server crashed: {e}")
+    print("DEBUG: End of script")

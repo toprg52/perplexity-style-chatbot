@@ -7,3 +7,8 @@ dist/
 db/
 *.log
 .DS_Store
+
+# Debug files
+*_valid_models*
+debug_*.py
+verified_models.json

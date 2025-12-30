@@ -87,6 +87,8 @@ const App = () => {
       setMessages(prev => [...prev, assistantMsg]);
 
       let isFirstChunk = true;
+      let buffer = "";
+      let hasParsedSources = false;
 
       while (true) {
         const { done, value } = await reader.read();
@@ -94,26 +96,30 @@ const App = () => {
 
         const chunk = decoder.decode(value, { stream: true });
 
-        // Check for Sources block in first chunk (very naive parsing for demo)
-        // Implementation detail: Backend sends JSON string + \n--split--\n + text
-        // Or just check if chunk starts with {"type": "sources"
+        let contentToAdd = "";
 
-        let contentToAdd = chunk;
-
-        // Simple hacky parsing since backend logic wasn't fully strict
-        // If we receive the sources JSON line
-        if (isFirstChunk && chunk.trim().startsWith('{"type": "sources"')) {
-          const parts = chunk.split('\n--split--\n');
-          if (parts.length > 0) {
+        if (!hasParsedSources) {
+          buffer += chunk;
+          // Check if buffer contains the split token
+          if (buffer.includes('\n--split--\n')) {
+            const parts = buffer.split('\n--split--\n');
+            // parts[0] is sources JSON, parts[1] is start of text (if any)
             try {
               const sourceData = JSON.parse(parts[0]);
               assistantMsg.sources = sourceData.data;
-              contentToAdd = parts[1] || "";
             } catch (e) {
               console.error("Error parsing sources", e);
             }
+            contentToAdd = parts.slice(1).join('\n--split--\n'); // Rejoin rest if multiple splits (unlikely) or just take part 1
+            hasParsedSources = true;
+            buffer = ""; // Clear buffer
+          } else {
+            // Continue buffering, don't display anything yet to avoid showing raw JSON
+            continue;
           }
-          isFirstChunk = false;
+        } else {
+          // Sources already parsed, this is just text content
+          contentToAdd = chunk;
         }
 
         assistantMsg.content += contentToAdd;
@@ -159,21 +165,32 @@ const App = () => {
     }
   };
 
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
   return (
-    <div className="flex bg-white h-screen overflow-hidden">
+    <div className="flex bg-white h-screen overflow-hidden relative">
       <Sidebar
         sessions={sessions}
         currentSessionId={currentSessionId}
-        onSelectSession={loadHistory}
-        onNewChat={handleNewChat}
+        onSelectSession={(id) => {
+          loadHistory(id);
+          setIsSidebarOpen(false); // Close sidebar on selection on mobile
+        }}
+        onNewChat={() => {
+          handleNewChat();
+          setIsSidebarOpen(false);
+        }}
         onRenameSession={handleRenameSession}
         onDeleteSession={handleDeleteSession}
+        isOpen={isSidebarOpen}
+        onClose={() => setIsSidebarOpen(false)}
       />
       <ChatArea
         messages={messages}
         isStreaming={isStreaming}
         onSendMessage={handleSendMessage}
-        isNewChat={!messages.length} // Simplified check
+        isNewChat={!messages.length}
+        onOpenSidebar={() => setIsSidebarOpen(true)}
       />
     </div>
   );

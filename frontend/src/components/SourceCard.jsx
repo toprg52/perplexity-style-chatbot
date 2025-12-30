@@ -8,7 +8,7 @@ const SourceCard = ({ sources }) => {
             <div className="flex items-center gap-2 mb-3 text-sm font-semibold text-gray-600 uppercase tracking-wide">
                 <span>🔗</span> Sources
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3">
                 {sources.map((source, idx) => {
                     const domain = source.url.split('/')[2].replace('www.', '');
                     return (
@@ -19,7 +19,7 @@ const SourceCard = ({ sources }) => {
                             rel="noopener noreferrer"
                             className="bg-[#f0f4f9] p-3 rounded-2xl hover:bg-[#e2e7eb] transition-colors flex flex-col justify-between h-[80px]"
                         >
-                            <div className="text-xs font-semibold text-gray-800 line-clamp-2 leading-tight">
+                            <div className="text-xs font-semibold text-gray-800 line-clamp-2 leading-tight w-full break-words">
                                 {source.title}
                             </div>
                             <div className="flex items-center gap-1 text-[10px] text-gray-500">
