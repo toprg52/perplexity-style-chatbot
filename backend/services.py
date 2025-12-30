@@ -8,11 +8,15 @@ import asyncio
 from tavily import TavilyClient
 
 # API Keys
-TAVILY_API_KEY = "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"
-GEMINI_API_KEY = "AIzaSyCikLiet8ZiU0i0klew5qQ6xQSKqdQCP2M"
+# API Keys
+from dotenv import load_dotenv
+load_dotenv()
+
+TAVILY_API_KEY = os.getenv("TAVILY_API_KEY")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
 if not TAVILY_API_KEY or not GEMINI_API_KEY:
-    print("Warning: API Keys not set")
+    print("Warning: API Keys not found in environment variables")
 
 # Initialize Tavily
 try:
